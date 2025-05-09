@@ -9,15 +9,70 @@ public class Listener : MonoBehaviour
 {
     Thread thread;
     public int connectionPort = 25001;
+    public int jointsperskeleton;
     TcpListener server;
     TcpClient client;
     bool running;
     List<GameObject> lines = new List<GameObject>();
     public GameObject JointPrefab;
+    public List<int[]> connectionsExeptions;
+    List<GameObject> skeletons;
 
     // Start is called before the first frame update
     void Start()
     {
+        //all joints connnect by default to the joint index before them these joints are exeptions
+        connectionsExeptions = new List<int[]>();
+        connectionsExeptions.Add(new int[] { 5, 0 });
+        connectionsExeptions.Add(new int[] { 5, 1 });
+        connectionsExeptions.Add(new int[] { 9, 0 });
+        connectionsExeptions.Add(new int[] { 9, 5 });
+        connectionsExeptions.Add(new int[] { 13, 0});
+        connectionsExeptions.Add(new int[] { 13, 9 });
+        connectionsExeptions.Add(new int[] { 17, 0 });
+        connectionsExeptions.Add(new int[] { 17, 13 });
+
+        connectionsExeptions.Add(new int[] { 21, 21 });
+        connectionsExeptions.Add(new int[] { 5 + 21, 0 + 21 });
+        connectionsExeptions.Add(new int[] { 5 + 21, 1 + 21 });
+        connectionsExeptions.Add(new int[] { 9 + 21, 0 + 21 });
+        connectionsExeptions.Add(new int[] { 9 + 21, 5 + 21 });
+        connectionsExeptions.Add(new int[] { 13 + 21, 0 + 21 });
+        connectionsExeptions.Add(new int[] { 13 + 21, 9 + 21 });
+        connectionsExeptions.Add(new int[] { 17 + 21, 0 + 21 });
+        connectionsExeptions.Add(new int[] { 17 + 21, 13 + 21 });
+
+        connectionsExeptions.Add(new int[] { 0 + 42, 0 + 42 });
+        connectionsExeptions.Add(new int[] { 4 + 42, 0 + 42 });
+        connectionsExeptions.Add(new int[] { 7 + 42, 3 + 42 });
+        connectionsExeptions.Add(new int[] { 8 + 42, 6 + 42 });
+        connectionsExeptions.Add(new int[] { 9 + 42, 9 + 42 });
+        connectionsExeptions.Add(new int[] { 11 + 42, 11 + 42 });
+        connectionsExeptions.Add(new int[] { 13 + 42, 11 + 42 });
+        connectionsExeptions.Add(new int[] { 14 + 42, 12 + 42 });
+        connectionsExeptions.Add(new int[] { 15 + 42, 13 + 42 });
+        connectionsExeptions.Add(new int[] { 16 + 42, 14 + 42 });
+        connectionsExeptions.Add(new int[] { 17 + 42, 15 + 42 });
+        connectionsExeptions.Add(new int[] { 18 + 42, 16 + 42 });
+        connectionsExeptions.Add(new int[] { 19 + 42, 15 + 42 });
+        connectionsExeptions.Add(new int[] { 20 + 42, 16 + 42 });
+        connectionsExeptions.Add(new int[] { 21 + 42, 15 + 42 });
+        connectionsExeptions.Add(new int[] { 22 + 42, 16 + 42 });
+        connectionsExeptions.Add(new int[] { 23 + 42, 11 + 42 });
+        connectionsExeptions.Add(new int[] { 24 + 42, 12 + 42 });
+        connectionsExeptions.Add(new int[] { 24 + 42, 23 + 42 });
+        connectionsExeptions.Add(new int[] { 25 + 42, 23 + 42 });
+        connectionsExeptions.Add(new int[] { 26 + 42, 24 + 42 });
+        connectionsExeptions.Add(new int[] { 28 + 42, 26 + 42 });
+        connectionsExeptions.Add(new int[] { 27 + 42, 25 + 42 });
+        connectionsExeptions.Add(new int[] { 29 + 42, 27 + 42 });
+        connectionsExeptions.Add(new int[] { 30 + 42, 28 + 42 });
+        connectionsExeptions.Add(new int[] { 31 + 42, 27 + 42 });
+        connectionsExeptions.Add(new int[] { 32 + 42, 28 + 42 });
+        connectionsExeptions.Add(new int[] { 31 + 42, 29 + 42 });
+        connectionsExeptions.Add(new int[] { 32 + 42, 30 + 42 });
+
+        skeletons = new List<GameObject>();
         // Receive on a separate thread so Unity doesn't freeze waiting for data
         ThreadStart ts = new ThreadStart(GetData);
         thread = new Thread(ts);
@@ -97,9 +152,17 @@ public class Listener : MonoBehaviour
 
     void Update()
     {
+        if(skeletons.Count < 1)
+        {
+            skeletons.Add(new GameObject());
+            for(int i = 0; i < jointsperskeleton; i++)
+            {
+                Instantiate(JointPrefab, skeletons[0].transform);
+            }
+        }
         for(int i =0; i < positions.Length;i++)
         {
-            this.gameObject.transform.GetChild((int)positions[i][0]).gameObject.transform.position = new Vector3(positions[i][1], positions[i][2], positions[i][3]);
+            skeletons[0].gameObject.transform.GetChild((int)positions[i][0]).gameObject.transform.position = new Vector3(positions[i][1], positions[i][2], positions[i][3]);
         }
         drawLines();
         // Set this object's position in the scene according to the position received
@@ -114,100 +177,29 @@ public class Listener : MonoBehaviour
         }
         lines.Clear();
         
-        for(int i =1; i < 21; i++)
+        for(int i =1; i < jointsperskeleton; i++)
         {
-            var go = new GameObject();
-            var go2 = new GameObject();
-            var lr = go.AddComponent<LineRenderer>();
-            var lr2 = go2.AddComponent<LineRenderer>();
-            if (i == 5)
+            List<int[]> cons = connectionsExeptions.FindAll(x => x[0] == i);
+            if (cons.Count == 0)
             {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(1).gameObject.transform.position);
-
-            }
-            else if(i == 9)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(5).gameObject.transform.position);
-            }
-            else if(i == 13)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(9).gameObject.transform.position);
-            }
-            else if(i == 17)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(13).gameObject.transform.position);
+                var go = new GameObject();
+                var lr = go.AddComponent<LineRenderer>();
+                lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
+                lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(i - 1).gameObject.transform.position);
+                lr.SetWidth(2,2);
+                lines.Add(go);
             }
             else
             {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(i-1).gameObject.transform.position);
+                foreach(int[] con in cons)
+                {
+                    var go = new GameObject();
+                    var lr = go.AddComponent<LineRenderer>();
+                    lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
+                    lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(con[1]).gameObject.transform.position);
+                    lines.Add(go);
+                }
             }
-            lines.Add(go);
-            lines.Add(go2);
-        }
-
-        for (int i = 22; i < 42; i++)
-        {
-            var go = new GameObject();
-            var go2 = new GameObject();
-            var lr = go.AddComponent<LineRenderer>();
-            var lr2 = go2.AddComponent<LineRenderer>();
-            if (i == 5 + 21)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0+21).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(1 + 21).gameObject.transform.position);
-
-            }
-            else if (i == 9 + 21)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0 + 21).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(5 + 21).gameObject.transform.position);
-            }
-            else if (i == 13 + 21)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0 + 21).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(9 + 21).gameObject.transform.position);
-            }
-            else if (i == 17 + 21)
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(0 + 21).gameObject.transform.position);
-
-                lr2.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr2.SetPosition(1, this.gameObject.transform.GetChild(13 + 21).gameObject.transform.position);
-            }
-            else
-            {
-                lr.SetPosition(0, this.gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, this.gameObject.transform.GetChild(i - 1).gameObject.transform.position);
-            }
-            lines.Add(go);
-            lines.Add(go2);
         }
     }
 }
