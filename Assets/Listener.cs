@@ -4,6 +4,7 @@ using System.Text;
 using UnityEngine;
 using System.Threading;
 using System.Collections.Generic;
+using System;
 
 public class Listener : MonoBehaviour
 {
@@ -132,17 +133,25 @@ public class Listener : MonoBehaviour
         // Split the elements into an array
         string[] stringArray = dataString.Split('|');
         Vector4[] cords = new Vector4[stringArray.Length];
-        for (int i = 0; i <stringArray.Length; i++)
+        try
         {
-            string[] pos = stringArray[i].Split(',');
-            // Store as a Vector3
-            Vector4 result = new Vector4(
-                float.Parse(pos[0]),
-                float.Parse(pos[1]),
-                float.Parse(pos[2]),
-                float.Parse(pos[3]));
-            cords[i] = result;
+            for (int i = 0; i < stringArray.Length; i++)
+            {
+                string[] pos = stringArray[i].Split(',');
+                // Store as a Vector3
+                Vector4 result = new Vector4(
+                    float.Parse(pos[0]),
+                    float.Parse(pos[1]),
+                    float.Parse(pos[2]),
+                    float.Parse(pos[3]));
+                cords[i] = result;
+            }
         }
+        catch
+        {
+            Console.WriteLine("O no, Anyway");
+        }
+        
 
         return cords;
     }
@@ -197,6 +206,7 @@ public class Listener : MonoBehaviour
                     var lr = go.AddComponent<LineRenderer>();
                     lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
                     lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(con[1]).gameObject.transform.position);
+                    lr.SetWidth(2, 2);
                     lines.Add(go);
                 }
             }
