@@ -6,6 +6,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System;
 using System.Globalization;
+using System.IO;
 
 public class Listener : MonoBehaviour
 {
@@ -94,7 +95,16 @@ public class Listener : MonoBehaviour
         running = true;
         while (running)
         {
-            Connection();
+            try
+            {
+                Connection();
+            }
+            catch
+            {
+                Console.WriteLine("O no, Anyway");
+                    
+            }
+            
         }
         server.Stop();
     }
@@ -107,16 +117,16 @@ public class Listener : MonoBehaviour
         byte[] buffer = new byte[client.ReceiveBufferSize];
         int bytesRead = nwStream.Read(buffer, 0, client.ReceiveBufferSize);
 
+
         // Decode the bytes into a string
         string dataReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
+        nwStream.Write(buffer, 0, bytesRead);
         // Make sure we're not getting an empty string
         //dataReceived.Trim();
         if (dataReceived != null && dataReceived != "")
         {
             // Convert the received string of data to the format we are using
             positions = ParseData(dataReceived);
-            nwStream.Write(buffer, 0, bytesRead);
         }
     }
 
@@ -135,8 +145,6 @@ public class Listener : MonoBehaviour
         // Split the elements into an array
         string[] stringArray = dataString.Split('|');
         Vector4[] cords = new Vector4[stringArray.Length];
-        try
-        {
             for (int i = 0; i < stringArray.Length; i++)
             {
                 string[] pos = stringArray[i].Split(',');
@@ -148,11 +156,8 @@ public class Listener : MonoBehaviour
                     float.Parse(pos[3], CultureInfo.InvariantCulture.NumberFormat));
                 cords[i] = result;
             }
-        }
-        catch
-        {
-            Console.WriteLine("O no, Anyway");
-        }
+
+
 
 
         return cords;
@@ -176,7 +181,6 @@ public class Listener : MonoBehaviour
             skeletons[0].gameObject.transform.GetChild((int)positions[i][0]).gameObject.transform.position = new Vector3(positions[i][1], positions[i][2], positions[i][3]);
         }
         drawLines();
-        // Set this object's position in the scene according to the position received
     }
 
 
@@ -197,7 +201,8 @@ public class Listener : MonoBehaviour
                 var lr = go.AddComponent<LineRenderer>();
                 lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
                 lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(i - 1).gameObject.transform.position);
-                lr.SetWidth(2,2);
+                lr.startWidth = 2;
+                lr.endWidth = 2;
                 lines.Add(go);
             }
             else
@@ -208,7 +213,8 @@ public class Listener : MonoBehaviour
                     var lr = go.AddComponent<LineRenderer>();
                     lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
                     lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(con[1]).gameObject.transform.position);
-                    lr.SetWidth(2, 2);
+                    lr.startWidth = 2;
+                    lr.endWidth = 2;
                     lines.Add(go);
                 }
             }
