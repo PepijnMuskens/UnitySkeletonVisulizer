@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Threading;
 using System.Collections.Generic;
 using System;
+using System.Globalization;
 
 public class Listener : MonoBehaviour
 {
@@ -122,6 +123,7 @@ public class Listener : MonoBehaviour
     // Use-case specific function, need to re-write this to interpret whatever data is being sent
     public static Vector4[] ParseData(string dataString)
     {
+       
         Debug.Log(dataString);
         // Remove the parentheses
         if (dataString.StartsWith("(") && dataString.EndsWith(")"))
@@ -140,10 +142,10 @@ public class Listener : MonoBehaviour
                 string[] pos = stringArray[i].Split(',');
                 // Store as a Vector3
                 Vector4 result = new Vector4(
-                    float.Parse(pos[0]),
-                    float.Parse(pos[1]),
-                    float.Parse(pos[2]),
-                    float.Parse(pos[3]));
+                    float.Parse(pos[0], CultureInfo.InvariantCulture.NumberFormat),
+                    float.Parse(pos[1], CultureInfo.InvariantCulture.NumberFormat),
+                    float.Parse(pos[2], CultureInfo.InvariantCulture.NumberFormat),
+                    float.Parse(pos[3], CultureInfo.InvariantCulture.NumberFormat));
                 cords[i] = result;
             }
         }
@@ -151,7 +153,7 @@ public class Listener : MonoBehaviour
         {
             Console.WriteLine("O no, Anyway");
         }
-        
+
 
         return cords;
     }

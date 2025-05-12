@@ -8,7 +8,11 @@ public class cammove : MonoBehaviour
     public float slowSpeed;
     public float normalSpeed;
     public float sprintSpeed;
+    public float rotationSpeed;
     float currentSpeed;
+
+    private float rotation;
+    private bool rotate;
 
     void Update()
     {
@@ -18,13 +22,19 @@ public class cammove : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Movement();
             Rotation();
+        }else if (Input.GetKeyDown(KeyCode.R))
+        {
+            rotate = !rotate;
         }
         else
         {
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
-
+        if (rotate)
+        {
+            Circle();
+        }
     }
 
     public void Rotation()
@@ -33,6 +43,13 @@ public class cammove : MonoBehaviour
         transform.Rotate(mouseInput * sensitivity);
         Vector3 eulerRotation = transform.rotation.eulerAngles;
         transform.rotation = Quaternion.Euler(eulerRotation.x, eulerRotation.y, 0);
+    }
+
+    public void Circle()
+    {
+        rotation += rotationSpeed * Time.deltaTime;
+        this.transform.parent.transform.rotation = Quaternion.Euler(0, rotation, 0);
+
     }
 
     public void Movement()
