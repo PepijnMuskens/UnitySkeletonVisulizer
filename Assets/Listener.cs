@@ -20,10 +20,14 @@ public class Listener : MonoBehaviour
     public GameObject JointPrefab;
     public List<int[]> connectionsExeptions;
     List<GameObject> skeletons;
+    List<Vector4[]> skeletondatas;
+    // Position is the data being received in this example
+ 
 
     // Start is called before the first frame update
     void Start()
     {
+        skeletondatas = new List<Vector4[]>();
         //all joints connnect by default to the joint index before them these joints are exeptions
         connectionsExeptions = new List<int[]>();
         connectionsExeptions.Add(new int[] { 5, 0 });
@@ -126,12 +130,12 @@ public class Listener : MonoBehaviour
         if (dataReceived != null && dataReceived != "")
         {
             // Convert the received string of data to the format we are using
-            positions = ParseData(dataReceived);
+            skeletondatas = ParseData(dataReceived);
         }
     }
 
     // Use-case specific function, need to re-write this to interpret whatever data is being sent
-    public static Vector4[] ParseData(string dataString)
+    public static List<Vector4[]> ParseData(string dataString)
     {
        
         Debug.Log(dataString);
@@ -140,11 +144,14 @@ public class Listener : MonoBehaviour
         {
             dataString = dataString.Substring(1, dataString.Length - 2);
         }
-       
-        
-        // Split the elements into an array
-        string[] stringArray = dataString.Split('|');
-        Vector4[] cords = new Vector4[stringArray.Length];
+
+        string[] skeletalsplit = dataString.Split('$');
+        List<Vector4[]> vector4s = new List<Vector4[]>();
+        for(int s = 0; s < skeletalsplit.Length; s++)
+        {
+            // Split the elements into an array
+            string[] stringArray = skeletalsplit[s].Split('|');
+            Vector4[] cords = new Vector4[stringArray.Length];
             for (int i = 0; i < stringArray.Length; i++)
             {
                 string[] pos = stringArray[i].Split(',');
@@ -156,34 +163,43 @@ public class Listener : MonoBehaviour
                     float.Parse(pos[3], CultureInfo.InvariantCulture.NumberFormat));
                 cords[i] = result;
             }
+            vector4s.Add(cords);
+        }
 
-
-
-
-        return cords;
+        return vector4s;
     }
-
-    // Position is the data being received in this example
-    Vector4[] positions = new Vector4[0];
 
     void Update()
     {
-        if(skeletons.Count < 1)
+        for(int i = skeletons.Count; i < skeletondatas.Count; i++)
         {
-            skeletons.Add(new GameObject());
-            for(int i = 0; i < jointsperskeleton; i++)
+            skeletons.Add(new GameObject("Skeleton"));
+            for (int j = 0; j < jointsperskeleton; j++)
             {
-                Instantiate(JointPrefab, skeletons[0].transform);
+                Instantiate(JointPrefab, skeletons[i].transform);
             }
         }
-        for(int i =0; i < positions.Length;i++)
+        for (int s = 0; s < skeletondatas.Count; s++)
         {
-            skeletons[0].gameObject.transform.GetChild((int)positions[i][0]).gameObject.transform.position = new Vector3(positions[i][1], positions[i][2], positions[i][3]);
+            Vector4[] positions = skeletondatas[s];
+            for (int i = 0; i < positions.Length; i++)
+            {
+                skeletons[s].gameObject.transform.GetChild((int)positions[i][0]).gameObject.transform.position = new Vector3(positions[i][1], positions[i][2], positions[i][3]);
+            }
+        }
+        for (int s = 0; s < skeletons.Count; s++)
+        {
+            if(s > skeletondatas.Count - 1)
+            {
+                skeletons[s].SetActive(false);
+            }
+            else
+            {
+                skeletons[s].SetActive(true);
+            }
         }
         drawLines();
     }
-
-
     void drawLines()
     {
         foreach(GameObject g in lines)
@@ -191,33 +207,43 @@ public class Listener : MonoBehaviour
             Destroy(g);
         }
         lines.Clear();
-        
-        for(int i =1; i < jointsperskeleton; i++)
+        for (int s = 0; s < skeletons.Count; s++)
         {
-            List<int[]> cons = connectionsExeptions.FindAll(x => x[0] == i);
-            if (cons.Count == 0)
+            if (s > skeletondatas.Count - 1)
             {
-                var go = new GameObject();
-                var lr = go.AddComponent<LineRenderer>();
-                lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
-                lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(i - 1).gameObject.transform.position);
-                lr.startWidth = 2;
-                lr.endWidth = 2;
-                lines.Add(go);
+
             }
             else
             {
-                foreach(int[] con in cons)
+                for (int i = 1; i < jointsperskeleton; i++)
                 {
-                    var go = new GameObject();
-                    var lr = go.AddComponent<LineRenderer>();
-                    lr.SetPosition(0, skeletons[0].gameObject.transform.GetChild(i).gameObject.transform.position);
-                    lr.SetPosition(1, skeletons[0].gameObject.transform.GetChild(con[1]).gameObject.transform.position);
-                    lr.startWidth = 2;
-                    lr.endWidth = 2;
-                    lines.Add(go);
+                    List<int[]> cons = connectionsExeptions.FindAll(x => x[0] == i);
+                    if (cons.Count == 0)
+                    {
+                        var go = new GameObject();
+                        var lr = go.AddComponent<LineRenderer>();
+                        lr.SetPosition(0, skeletons[s].gameObject.transform.GetChild(i).gameObject.transform.position);
+                        lr.SetPosition(1, skeletons[s].gameObject.transform.GetChild(i - 1).gameObject.transform.position);
+                        lr.startWidth = 2;
+                        lr.endWidth = 2;
+                        lines.Add(go);
+                    }
+                    else
+                    {
+                        foreach (int[] con in cons)
+                        {
+                            var go = new GameObject();
+                            var lr = go.AddComponent<LineRenderer>();
+                            lr.SetPosition(0, skeletons[s].gameObject.transform.GetChild(i).gameObject.transform.position);
+                            lr.SetPosition(1, skeletons[s].gameObject.transform.GetChild(con[1]).gameObject.transform.position);
+                            lr.startWidth = 2;
+                            lr.endWidth = 2;
+                            lines.Add(go);
+                        }
+                    }
                 }
             }
         }
+        
     }
 }
