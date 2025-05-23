@@ -30,7 +30,7 @@ public class Listener : MonoBehaviour
         skeletondatas = new List<Vector4[]>();
         //all joints connnect by default to the joint index before them these joints are exeptions
         connectionsExeptions = new List<int[]>();
-        connectionsExeptions.Add(new int[] { 5, 0 });
+        /*connectionsExeptions.Add(new int[] { 5, 0 });
         connectionsExeptions.Add(new int[] { 5, 1 });
         connectionsExeptions.Add(new int[] { 9, 0 });
         connectionsExeptions.Add(new int[] { 9, 5 });
@@ -47,37 +47,37 @@ public class Listener : MonoBehaviour
         connectionsExeptions.Add(new int[] { 13 + 21, 0 + 21 });
         connectionsExeptions.Add(new int[] { 13 + 21, 9 + 21 });
         connectionsExeptions.Add(new int[] { 17 + 21, 0 + 21 });
-        connectionsExeptions.Add(new int[] { 17 + 21, 13 + 21 });
+        connectionsExeptions.Add(new int[] { 17 + 21, 13 + 21 });*/
 
-        connectionsExeptions.Add(new int[] { 0 + 42, 0 + 42 });
-        connectionsExeptions.Add(new int[] { 4 + 42, 0 + 42 });
-        connectionsExeptions.Add(new int[] { 7 + 42, 3 + 42 });
-        connectionsExeptions.Add(new int[] { 8 + 42, 6 + 42 });
-        connectionsExeptions.Add(new int[] { 9 + 42, 9 + 42 });
-        connectionsExeptions.Add(new int[] { 11 + 42, 11 + 42 });
-        connectionsExeptions.Add(new int[] { 13 + 42, 11 + 42 });
-        connectionsExeptions.Add(new int[] { 14 + 42, 12 + 42 });
-        connectionsExeptions.Add(new int[] { 15 + 42, 13 + 42 });
-        connectionsExeptions.Add(new int[] { 16 + 42, 14 + 42 });
-        connectionsExeptions.Add(new int[] { 17 + 42, 15 + 42 });
-        connectionsExeptions.Add(new int[] { 18 + 42, 16 + 42 });
-        connectionsExeptions.Add(new int[] { 19 + 42, 15 + 42 });
-        connectionsExeptions.Add(new int[] { 20 + 42, 16 + 42 });
-        connectionsExeptions.Add(new int[] { 21 + 42, 15 + 42 });
-        connectionsExeptions.Add(new int[] { 22 + 42, 16 + 42 });
-        connectionsExeptions.Add(new int[] { 23 + 42, 11 + 42 });
-        connectionsExeptions.Add(new int[] { 24 + 42, 12 + 42 });
-        connectionsExeptions.Add(new int[] { 24 + 42, 23 + 42 });
-        connectionsExeptions.Add(new int[] { 25 + 42, 23 + 42 });
-        connectionsExeptions.Add(new int[] { 26 + 42, 24 + 42 });
-        connectionsExeptions.Add(new int[] { 28 + 42, 26 + 42 });
-        connectionsExeptions.Add(new int[] { 27 + 42, 25 + 42 });
-        connectionsExeptions.Add(new int[] { 29 + 42, 27 + 42 });
-        connectionsExeptions.Add(new int[] { 30 + 42, 28 + 42 });
-        connectionsExeptions.Add(new int[] { 31 + 42, 27 + 42 });
-        connectionsExeptions.Add(new int[] { 32 + 42, 28 + 42 });
-        connectionsExeptions.Add(new int[] { 31 + 42, 29 + 42 });
-        connectionsExeptions.Add(new int[] { 32 + 42, 30 + 42 });
+        connectionsExeptions.Add(new int[] { 0, 0 });
+        connectionsExeptions.Add(new int[] { 4, 0 });
+        connectionsExeptions.Add(new int[] { 7, 3 });
+        connectionsExeptions.Add(new int[] { 8, 6 });
+        connectionsExeptions.Add(new int[] { 9, 9 });
+        connectionsExeptions.Add(new int[] { 11, 11 });
+        connectionsExeptions.Add(new int[] { 13, 11 });
+        connectionsExeptions.Add(new int[] { 14, 12 });
+        connectionsExeptions.Add(new int[] { 15, 13 });
+        connectionsExeptions.Add(new int[] { 16, 14 });
+        connectionsExeptions.Add(new int[] { 17, 15 });
+        connectionsExeptions.Add(new int[] { 18, 16 });
+        connectionsExeptions.Add(new int[] { 19, 15 });
+        connectionsExeptions.Add(new int[] { 20, 16 });
+        connectionsExeptions.Add(new int[] { 21, 15 });
+        connectionsExeptions.Add(new int[] { 22, 16 });
+        connectionsExeptions.Add(new int[] { 23, 11 });
+        connectionsExeptions.Add(new int[] { 24, 12 });
+        connectionsExeptions.Add(new int[] { 24, 23 });
+        connectionsExeptions.Add(new int[] { 25, 23 });
+        connectionsExeptions.Add(new int[] { 26, 24 });
+        connectionsExeptions.Add(new int[] { 28, 26 });
+        connectionsExeptions.Add(new int[] { 27, 25 });
+        connectionsExeptions.Add(new int[] { 29, 27 });
+        connectionsExeptions.Add(new int[] { 30, 28 });
+        connectionsExeptions.Add(new int[] { 31, 27 });
+        connectionsExeptions.Add(new int[] { 32, 28 });
+        connectionsExeptions.Add(new int[] { 31, 29 });
+        connectionsExeptions.Add(new int[] { 32, 30 });
 
         skeletons = new List<GameObject>();
         // Receive on a separate thread so Unity doesn't freeze waiting for data
@@ -97,30 +97,43 @@ public class Listener : MonoBehaviour
 
         // Start listening
         running = true;
+
         while (running)
         {
             try
             {
-                Connection();
+                if (!Connection())
+                {
+                    //reconnect
+                    server.Stop();
+                    client.Dispose();
+                    server = new TcpListener(IPAddress.Any, connectionPort);
+                    server.Start();
+
+                    // Create a client to get the data stream
+                    client = server.AcceptTcpClient();
+
+                }
+
+
             }
-            catch
+            catch(Exception e)
             {
-                Console.WriteLine("O no, Anyway");
-                    
+                if(e.GetType() != typeof(ThreadAbortException))
+                {
+                    Console.WriteLine("O no, Anyway");
+                }
             }
-            
         }
         server.Stop();
     }
-
     // Update is called once per frame
-    void Connection()
+    bool Connection()
     {
         // Read data from the network stream
         NetworkStream nwStream = client.GetStream();
         byte[] buffer = new byte[client.ReceiveBufferSize];
         int bytesRead = nwStream.Read(buffer, 0, client.ReceiveBufferSize);
-
 
         // Decode the bytes into a string
         string dataReceived = Encoding.UTF8.GetString(buffer, 0, bytesRead);
@@ -131,6 +144,12 @@ public class Listener : MonoBehaviour
         {
             // Convert the received string of data to the format we are using
             skeletondatas = ParseData(dataReceived);
+            return true;
+        }
+        else
+        {
+            Console.WriteLine("test");
+            return false;
         }
     }
 
@@ -215,8 +234,13 @@ public class Listener : MonoBehaviour
             }
             else
             {
+                Vector3 zero = new Vector3(0, 0, 0);
                 for (int i = 1; i < jointsperskeleton; i++)
                 {
+                    if (skeletons[s].gameObject.transform.GetChild(i).gameObject.transform.position == zero || skeletons[s].gameObject.transform.GetChild(i-1).gameObject.transform.position == zero)
+                    {
+                        continue;
+                    }
                     List<int[]> cons = connectionsExeptions.FindAll(x => x[0] == i);
                     if (cons.Count == 0)
                     {

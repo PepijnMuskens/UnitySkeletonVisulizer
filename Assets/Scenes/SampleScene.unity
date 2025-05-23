@@ -447,7 +447,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   connectionPort: 25001
-  jointsperskeleton: 75
+  jointsperskeleton: 34
   JointPrefab: {fileID: 5920891883411927781, guid: ba9c8457529e5044b9fe84c993b84ebd, type: 3}
 --- !u!4 &1646754722
 Transform:
