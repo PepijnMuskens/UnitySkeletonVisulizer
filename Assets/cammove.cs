@@ -1,6 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
+using YamlDotNet.RepresentationModel;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
+using Unity.VisualScripting;
 
 public class cammove : MonoBehaviour
 {
@@ -13,7 +19,36 @@ public class cammove : MonoBehaviour
 
     private float rotation;
     private bool rotate;
+    string ConfigFile = "/Config/config.yml";
 
+    void Start()
+    {
+        try
+        {
+            string filePath = Directory.GetCurrentDirectory() + ConfigFile;
+            IDeserializer deserializer = new DeserializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            using (var reader = new StreamReader(filePath))
+            {
+                // Load the stream
+                var yaml = new YamlStream();
+                yaml.Load(reader);
+
+                YamlNode config = yaml.Documents[0].RootNode;// the rest
+                Console.WriteLine(config);
+                float speed = config["camera"]["speed"].ConvertTo<float>() /10;
+                slowSpeed = slowSpeed * speed;
+                normalSpeed = normalSpeed * speed;
+                sprintSpeed = sprintSpeed * speed;
+
+            }
+        }
+        catch
+        {
+
+        }
+    }
     void Update()
     {
         if (Input.GetMouseButton(1)) //if we are holding right click

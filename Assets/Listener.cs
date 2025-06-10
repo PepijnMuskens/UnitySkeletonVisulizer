@@ -6,7 +6,12 @@ using System.Threading;
 using System.Collections.Generic;
 using System;
 using System.Globalization;
+using YamlDotNet.Serialization;
 using System.IO;
+using YamlDotNet.RepresentationModel;
+using Unity.VisualScripting;
+using YamlDotNet.Serialization.NamingConventions;
+
 
 public class Listener : MonoBehaviour
 {
@@ -16,68 +21,59 @@ public class Listener : MonoBehaviour
     TcpListener server;
     TcpClient client;
     bool running;
+    public Material material;
     List<GameObject> lines = new List<GameObject>();
     public GameObject JointPrefab;
+    public GameObject JointPrefab_Predict;
+    public GameObject Floor;
     public List<int[]> connectionsExeptions;
+    public List<int[]> jointConnections;
     List<GameObject> skeletons;
     List<Vector4[]> skeletondatas;
+    List<Color> skeletoncolors;
     // Position is the data being received in this example
- 
+
+    string ConfigFile = "/Config/config.yml";
+
 
     // Start is called before the first frame update
     void Start()
     {
+        skeletoncolors = new List<Color>();
+        try
+        {
+            string filePath = Directory.GetCurrentDirectory() + ConfigFile;
+            IDeserializer deserializer = new DeserializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            using (var reader = new StreamReader(filePath))
+            {
+                // Load the stream
+                var yaml = new YamlStream();
+                yaml.Load(reader);
+
+                YamlNode config = yaml.Documents[0].RootNode;// the rest
+                Console.WriteLine(config);
+                YamlNode joints = config["skeleton_data"]["joint_connections"];
+                jointConnections = deserializer.Deserialize<List<int[]>>(joints.ToString());
+
+                YamlNode colors = config["skeleton_data"]["colors"];
+                foreach(int[] col in deserializer.Deserialize<List<int[]>>(colors.ToString()))
+                {
+                    skeletoncolors.Add(new Color(col[0], col[1], col[2]));
+                }
+                int floory = deserializer.Deserialize<int>(config["floor"]["y"].ToString());
+                Floor.transform.position = new Vector3(0, floory,0);
+
+            }
+        }
+        catch
+        {
+
+        }
         skeletondatas = new List<Vector4[]>();
         //all joints connnect by default to the joint index before them these joints are exeptions
-        connectionsExeptions = new List<int[]>();
-        /*connectionsExeptions.Add(new int[] { 5, 0 });
-        connectionsExeptions.Add(new int[] { 5, 1 });
-        connectionsExeptions.Add(new int[] { 9, 0 });
-        connectionsExeptions.Add(new int[] { 9, 5 });
-        connectionsExeptions.Add(new int[] { 13, 0});
-        connectionsExeptions.Add(new int[] { 13, 9 });
-        connectionsExeptions.Add(new int[] { 17, 0 });
-        connectionsExeptions.Add(new int[] { 17, 13 });
 
-        connectionsExeptions.Add(new int[] { 21, 21 });
-        connectionsExeptions.Add(new int[] { 5 + 21, 0 + 21 });
-        connectionsExeptions.Add(new int[] { 5 + 21, 1 + 21 });
-        connectionsExeptions.Add(new int[] { 9 + 21, 0 + 21 });
-        connectionsExeptions.Add(new int[] { 9 + 21, 5 + 21 });
-        connectionsExeptions.Add(new int[] { 13 + 21, 0 + 21 });
-        connectionsExeptions.Add(new int[] { 13 + 21, 9 + 21 });
-        connectionsExeptions.Add(new int[] { 17 + 21, 0 + 21 });
-        connectionsExeptions.Add(new int[] { 17 + 21, 13 + 21 });*/
-
-        connectionsExeptions.Add(new int[] { 0, 0 });
-        connectionsExeptions.Add(new int[] { 4, 0 });
-        connectionsExeptions.Add(new int[] { 7, 3 });
-        connectionsExeptions.Add(new int[] { 8, 6 });
-        connectionsExeptions.Add(new int[] { 9, 9 });
-        connectionsExeptions.Add(new int[] { 11, 11 });
-        connectionsExeptions.Add(new int[] { 13, 11 });
-        connectionsExeptions.Add(new int[] { 14, 12 });
-        connectionsExeptions.Add(new int[] { 15, 13 });
-        connectionsExeptions.Add(new int[] { 16, 14 });
-        connectionsExeptions.Add(new int[] { 17, 15 });
-        connectionsExeptions.Add(new int[] { 18, 16 });
-        connectionsExeptions.Add(new int[] { 19, 15 });
-        connectionsExeptions.Add(new int[] { 20, 16 });
-        connectionsExeptions.Add(new int[] { 21, 15 });
-        connectionsExeptions.Add(new int[] { 22, 16 });
-        connectionsExeptions.Add(new int[] { 23, 11 });
-        connectionsExeptions.Add(new int[] { 24, 12 });
-        connectionsExeptions.Add(new int[] { 24, 23 });
-        connectionsExeptions.Add(new int[] { 25, 23 });
-        connectionsExeptions.Add(new int[] { 26, 24 });
-        connectionsExeptions.Add(new int[] { 28, 26 });
-        connectionsExeptions.Add(new int[] { 27, 25 });
-        connectionsExeptions.Add(new int[] { 29, 27 });
-        connectionsExeptions.Add(new int[] { 30, 28 });
-        connectionsExeptions.Add(new int[] { 31, 27 });
-        connectionsExeptions.Add(new int[] { 32, 28 });
-        connectionsExeptions.Add(new int[] { 31, 29 });
-        connectionsExeptions.Add(new int[] { 32, 30 });
 
         skeletons = new List<GameObject>();
         // Receive on a separate thread so Unity doesn't freeze waiting for data
@@ -195,7 +191,15 @@ public class Listener : MonoBehaviour
             skeletons.Add(new GameObject("Skeleton"));
             for (int j = 0; j < jointsperskeleton; j++)
             {
-                Instantiate(JointPrefab, skeletons[i].transform);
+                if(i< 1)
+                {
+                    Instantiate(JointPrefab, skeletons[i].transform);
+                }
+                else
+                {
+                    Instantiate(JointPrefab_Predict, skeletons[i].transform);
+                }
+                
             }
         }
         for (int s = 0; s < skeletondatas.Count; s++)
@@ -241,16 +245,9 @@ public class Listener : MonoBehaviour
                     {
                         continue;
                     }
-                    List<int[]> cons = connectionsExeptions.FindAll(x => x[0] == i);
+                    List<int[]> cons = jointConnections.FindAll(x => x[0] == i);
                     if (cons.Count == 0)
                     {
-                        var go = new GameObject();
-                        var lr = go.AddComponent<LineRenderer>();
-                        lr.SetPosition(0, skeletons[s].gameObject.transform.GetChild(i).gameObject.transform.position);
-                        lr.SetPosition(1, skeletons[s].gameObject.transform.GetChild(i - 1).gameObject.transform.position);
-                        lr.startWidth = 2;
-                        lr.endWidth = 2;
-                        lines.Add(go);
                     }
                     else
                     {
@@ -258,6 +255,10 @@ public class Listener : MonoBehaviour
                         {
                             var go = new GameObject();
                             var lr = go.AddComponent<LineRenderer>();
+                            if (s < skeletoncolors.Count)
+                            {
+                                lr.material.color = skeletoncolors[s];
+                            }
                             lr.SetPosition(0, skeletons[s].gameObject.transform.GetChild(i).gameObject.transform.position);
                             lr.SetPosition(1, skeletons[s].gameObject.transform.GetChild(con[1]).gameObject.transform.position);
                             lr.startWidth = 2;
